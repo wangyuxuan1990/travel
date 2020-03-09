@@ -78,7 +78,7 @@ object HotOrderTransation {
     import sparkSession.sqlContext.implicits._
     val hotOrder = reultHot.toDF("rk" , "begin_address_code" , "centerPoint" , "count")
 
-    SparkSQLHBaseSink.saveToHBase(hotOrder,"hotOrder","rk","rk,begin_address_code,centerPoint,count")
+//    SparkSQLHBaseSink.saveToHBase(hotOrder,"hotOrder","rk","rk,begin_address_code,centerPoint,count")
 
 
   }

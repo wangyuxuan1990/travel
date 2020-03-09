@@ -3,8 +3,9 @@ package com.travel.programApp
 import java.lang
 import java.util.regex.Pattern
 
-import com.travel.common.{ConfigUtil, Constants, HBaseUtil}
+import com.travel.common.{ConfigUtil, Constants, HBaseUtil, JedisUtil}
 import com.travel.loggings.Logging
+import com.travel.utils.HbaseTools
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.util.Bytes
@@ -13,9 +14,10 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.dstream.InputDStream
-import org.apache.spark.streaming.kafka010.{ConsumerStrategies, ConsumerStrategy, KafkaUtils, LocationStrategies}
+import org.apache.spark.streaming.kafka010._
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
+import redis.clients.jedis.Jedis
 
 import scala.collection.mutable
 
@@ -92,5 +94,41 @@ object StreamingKafka extends Logging {
       LocationStrategies.PreferConsistent,
       finalConsumerStrategy
     )
+
+    //        val resultDStream: InputDStream[ConsumerRecord[String, String]] = HbaseTools.getStreamingContextFromHBase(ssc, kafkaParams, topics, group, "(.*)gps_topic")
+
+    // 获取出来数据，保存到hbase，以及redis，并且更新offset值
+    resultDStream.foreachRDD(eachRDD => {
+      if (!eachRDD.isEmpty()) {
+        // transaction.begin
+        eachRDD.foreachPartition(eachPartition => {
+          val conn: Connection = HbaseTools.getHbaseConn
+          val jedis: Jedis = JedisUtil.getJedis
+          eachPartition.foreach(eachLine => {
+            // 获取到每一行数据
+            HbaseTools.saveToHBaseAndRedis(conn, jedis, eachLine)
+          })
+          conn.close()
+          jedis.close()
+        })
+
+        // 一个RDD的数据已经处理完成
+        // 需要更新hbase当中保存的offset的值  ranges表示每一个分区的partition的起始值和结束值
+        val ranges: Array[OffsetRange] = eachRDD.asInstanceOf[HasOffsetRanges].offsetRanges
+        for (eachRange <- ranges) {
+          val startOffset: Long = eachRange.fromOffset
+          val endOffset: Long = eachRange.untilOffset
+          val topic: String = eachRange.topic
+          val partition: Int = eachRange.partition
+          // 将offset的值保存到hbase里面去
+          HbaseTools.saveBatchOffset(group, topic, partition + "", endOffset)
+        }
+        // transaction.end
+      }
+    })
+
+    // 数据存入到hbase以及redis已经实现了
+    ssc.start()
+    ssc.awaitTermination()
   }
 }

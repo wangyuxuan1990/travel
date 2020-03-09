@@ -120,7 +120,7 @@ object  HotAreaOrder {
 
     _hot_order.show()
 
-    SparkSQLHBaseSink.saveToHBase(_hot_order,"_hot_order","rk","rk,_city_code,_day_order_num,_new_orders_num")
+//    SparkSQLHBaseSink.saveToHBase(_hot_order,"_hot_order","rk","rk,_city_code,_day_order_num,_new_orders_num")
 
 //    DataFrameToHbase.save(_hot_order , "_hot_order" , "rk" , 1 , false)
   }
