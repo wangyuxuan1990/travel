@@ -2,7 +2,7 @@ package com.travel.programApp
 
 import java.util
 
-import com.travel.common.District
+import com.travel.common.{Constants, District}
 import com.travel.utils.{HbaseTools, SparkUtils}
 import com.uber.h3core.H3Core
 import org.apache.hadoop.conf.Configuration
@@ -14,7 +14,7 @@ import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.geotools.geometry.jts.JTSFactoryFinder
-import org.locationtech.jts.geom.{GeometryFactory, Polygon}
+import org.locationtech.jts.geom.{GeometryFactory, Point, Polygon}
 import org.locationtech.jts.io.WKTReader
 
 import scala.collection.mutable
@@ -38,12 +38,15 @@ object SparkSQLVirtualStation {
     // 读取hbase的数据，获取到了df
     val hbaseFrame: DataFrame = HbaseTools.loadHBaseData(sparkSession, hconf)
     hbaseFrame.createOrReplaceTempView("order_df")
+
     // 第二步：计算所有的虚拟车站
     // 计算我们的虚拟车站，将每一个经纬度，转换成为hashCode码值
-    val h3: H3Core = H3Core.newInstance()
     // 自定sql函数
     sparkSession.udf.register("locationToH3", new UDF3[String, String, Int, Long] {
-      override def call(t1: String, t2: String, t3: Int): Long = h3.geoToH3(t1.toDouble, t2.toDouble, t3)
+      override def call(t1: String, t2: String, t3: Int): Long = {
+        val h3: H3Core = H3Core.newInstance
+        h3.geoToH3(t1.toDouble, t2.toDouble, t3)
+      }
     }, DataTypes.LongType)
     val order_sql = "select order_id, city_id, starting_lng, starting_lat, locationToH3(starting_lat, starting_lng, 12) as h3code from order_df"
     val frame: DataFrame = sparkSession.sql(order_sql)
@@ -73,9 +76,10 @@ object SparkSQLVirtualStation {
     // 第三步：确定海口市每个区的边界
     // 计算出每个区域边界 并且将边界进行广播
     val districtBroadCast: Broadcast[util.ArrayList[District]] = SparkUtils.broadCastDistrictValue(sparkSession)
+
     // 第四步：判断虚拟车站属于哪一个区，接口
     // 计算虚拟车站究竟再哪一个区里面
-    virtual_rdd.mapPartitions(eachPartition => {
+    val finalSaveRow: RDD[mutable.Buffer[Row]] = virtual_rdd.mapPartitions(eachPartition => {
       // 使用JTS-Tools来通过多个经纬度，画出多边形
       val geometryFactory: GeometryFactory = JTSFactoryFinder.getGeometryFactory(null)
       val reader: WKTReader = new WKTReader(geometryFactory)
@@ -85,8 +89,25 @@ object SparkSQLVirtualStation {
 
       // 获取到了每一个虚拟车站这个数据
       eachPartition.map(row => {
-
+        val lng: String = row.getAs[String]("starting_lng")
+        val lat: String = row.getAs[String]("starting_lat")
+        val wktPoint: String = "POINT(" + lng + " " + lat + ")"
+        val point: Point = reader.read(wktPoint).asInstanceOf[Point]
+        // 判断point属于哪一个区
+        // 循环遍历每一个区
+        val rows: mutable.Buffer[Row] = wktPolygons.map(polygon => {
+          if (polygon._2.contains(point)) {
+            val fields: Array[Any] = row.toSeq.toArray ++ Seq(polygon._1.getName)
+            Row.fromSeq(fields)
+          } else {
+            null
+          }
+        }).filter(null != _)
+        rows
       })
     })
+    val rowRDD: RDD[Row] = finalSaveRow.flatMap(x => x)
+    // 将每个计算出来的虚拟车站，保存到hbase里面去
+    HbaseTools.saveOrWriteData(hconf, rowRDD, Constants.VIRTUAL_STATION)
   }
 }
