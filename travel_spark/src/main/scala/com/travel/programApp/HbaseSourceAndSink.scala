@@ -14,8 +14,6 @@ import org.apache.spark.sql.sources.v2.{DataSourceOptions, DataSourceV2, ReadSup
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
-import scala.collection.mutable.ListBuffer
-
 /**
  * @author wangyuxuan
  * @date 2020/3/12 11:48
@@ -177,16 +175,11 @@ class HBaseReader(tableName: String, cfAndCC: String) extends DataReader[Row] {
     // 获取到了每一条数据
     import scala.collection.JavaConverters._
     val iterator: Iterator[Seq[AnyRef]] = resultScanner.iterator().asScala.map(eachResult => {
-      var list: ListBuffer[AnyRef] = ListBuffer[AnyRef]()
-      val strings: Array[String] = cfAndCC.split(",")
-      for (string <- strings) {
-        val cfAndCcString: Array[String] = string.split(":")
-        val cf: String = cfAndCcString(0)
-        val cc: String = cfAndCcString(1)
-        val value: String = Bytes.toString(eachResult.getValue(cf.getBytes(), cc.getBytes()))
-        list += value
-      }
-      list.toList
+      val strings: Array[String] = cfAndCC.split(",").map(eachCfAndCC => {
+        val strings: Array[String] = eachCfAndCC.split(":")
+        Bytes.toString(eachResult.getValue(strings(0).getBytes(), strings(1).getBytes()))
+      })
+      strings
     })
     iterator
   }
