@@ -15,7 +15,7 @@ class HBaseDataWriter(tableName:String,rowkey:String,hbaseFields:String) extends
 
   override def write(record: Row): Unit = {
     val fields: Array[String] = hbaseFields.split(",")
-    val rowkeyStr: String = record.getAs(rowkey)
+    val rowkeyStr: String = record.getAs(rowkey).toString
     val map: Map[String, String] = record.getValuesMap(fields)
     HbaseTools.putMapData(conn,tableName,rowkeyStr,map)
 

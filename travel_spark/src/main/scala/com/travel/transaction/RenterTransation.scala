@@ -1,5 +1,6 @@
 package com.travel.transaction
 
+import com.travel.programApp.SparkSQLHBaseSink
 import com.travel.sql.RenterSQL
 import org.apache.spark.sql.SparkSession
 
@@ -88,7 +89,7 @@ object RenterTransation {
       .toDF("rk" , "_city_code" , "_day_new_user" , "DAU")
 
     //结果落地
-//    SparkSQLHBaseSink.saveToHBase(summary_register_active,"summary_register_active","rk","rk,_city_code,_day_new_user,DAU")
+    SparkSQLHBaseSink.saveToHBase(summary_register_active,"summary_register_active","rk","rk,_city_code,_day_new_user,DAU")
   }
 
   //###################日、周、月新增用户数###############################
@@ -134,7 +135,7 @@ object RenterTransation {
     val palt_mwd = session.sql(RenterSQL._palt_mwd)
       .toDF("myid" , "monthNewUserCount" , "weekNewUserCount" , "dayNewUserCount")
 
-//    SparkSQLHBaseSink.saveToHBase(palt_mwd,"palt_mwd","myid","myid,monthNewUserCount,weekNewUserCount,dayNewUserCount")
+    SparkSQLHBaseSink.saveToHBase(palt_mwd,"palt_mwd","myid","myid,monthNewUserCount,weekNewUserCount,dayNewUserCount")
   }
 
   //留存率
@@ -219,7 +220,7 @@ object RenterTransation {
 
     val stateRate =  session.sql(RenterSQL.stateRate)
       .toDF("myid" , "monthStateRate" , "weekStateRate" , "dayStateRate")
-//    SparkSQLHBaseSink.saveToHBase(stateRate,"stateRage","myid","myid,monthStateRate,weekStateRate,dayStateRate")
+    SparkSQLHBaseSink.saveToHBase(stateRate,"stateRage","myid","myid,monthStateRate,weekStateRate,dayStateRate")
   }
 
 
@@ -234,6 +235,6 @@ object RenterTransation {
     //活跃用户汇总
     val active  = session.sql(RenterSQL.finalActive).toDF("rk","DAU" , "WAU" , "MAU")
 
-//    SparkSQLHBaseSink.saveToHBase(active,"active","rk","rk,DAU,WAU,MAU")
+    SparkSQLHBaseSink.saveToHBase(active,"active","rk","rk,DAU,WAU,MAU")
   }
 }

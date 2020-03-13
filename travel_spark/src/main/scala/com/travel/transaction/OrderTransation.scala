@@ -1,5 +1,6 @@
 package com.travel.transaction
 
+import com.travel.programApp.SparkSQLHBaseSink
 import com.travel.sql.{OrderTransationSQL, RenterSQL}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -43,7 +44,7 @@ object OrderTransation {
     val final_summary_order = session.sql(OrderTransationSQL._final_summary_order_).toDF("rk" , "monthVehicleCount" , "dayVehicleCount" , "o_begin_address_code" , "monthOrderCount" , "weekOrderCount" , "dayOrderCount")
 
  //   final_summary_order.show(30)
-//    SparkSQLHBaseSink.saveToHBase(final_summary_order,"final_summary_order","rk","rk,monthVehicleCount,dayVehicleCount,o_begin_address_code,monthOrderCount,weekOrderCount,dayOrderCount")
+    SparkSQLHBaseSink.saveToHBase(final_summary_order,"final_summary_order","rk","rk,monthVehicleCount,dayVehicleCount,o_begin_address_code,monthOrderCount,weekOrderCount,dayOrderCount")
 
   }
 
@@ -58,7 +59,7 @@ object OrderTransation {
     //t1 join 日均 = t2
     //t2 join 公里
     val summary_plat: DataFrame = session.sql(OrderTransationSQL.summary_plat).toDF("rk" , "totalOrderNum" , "monthOrderNum" , "avgOrderNum" , "charge_mileage")
-//    SparkSQLHBaseSink.saveToHBase(summary_plat,"summary_plat","rk","rk,totalOrderNum,monthOrderNum,avgOrderNum,charge_mileage")
+    SparkSQLHBaseSink.saveToHBase(summary_plat,"summary_plat","rk","rk,totalOrderNum,monthOrderNum,avgOrderNum,charge_mileage")
   }
 
 
@@ -78,6 +79,6 @@ object OrderTransation {
     //2、t1 关联 pay_all = 结果
     val summary_order_register_pay = sparkSession.sql(OrderTransationSQL.summary_order_register_pay)
       .toDF("myid" , "totalCount" , "registerTotalCount" , "pay_all")
-//    SparkSQLHBaseSink.saveToHBase(summary_order_register_pay,"summary_order_register_pay","myid","myid,totalCount,registerTotalCount,pay_all")
+    SparkSQLHBaseSink.saveToHBase(summary_order_register_pay,"summary_order_register_pay","myid","myid,totalCount,registerTotalCount,pay_all")
   }
 }

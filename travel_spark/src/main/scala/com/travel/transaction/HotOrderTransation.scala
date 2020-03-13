@@ -1,6 +1,8 @@
 package com.travel.transaction
 
 import java.util
+
+import com.travel.programApp.SparkSQLHBaseSink
 import com.travel.utils.GetCenterPointFromListOfCoordinates
 import com.uber.h3core.H3Core
 import com.uber.h3core.util.GeoCoord
@@ -78,7 +80,7 @@ object HotOrderTransation {
     import sparkSession.sqlContext.implicits._
     val hotOrder = reultHot.toDF("rk" , "begin_address_code" , "centerPoint" , "count")
 
-//    SparkSQLHBaseSink.saveToHBase(hotOrder,"hotOrder","rk","rk,begin_address_code,centerPoint,count")
+    SparkSQLHBaseSink.saveToHBase(hotOrder,"hotOrder","rk","rk,begin_address_code,centerPoint,count")
 
 
   }

@@ -1,5 +1,6 @@
 package com.travel.transaction
 
+import com.travel.programApp.SparkSQLHBaseSink
 import com.travel.sql.DriverSQL
 import org.apache.spark.sql.SparkSession
 
@@ -54,7 +55,7 @@ object DriverTransation {
     val final_summary_pat_order = sparkSession.sql(DriverSQL._final_summary_pat_order).toDF("rk" , "city_name" , "_year_comple_rate" , "_quarter_comple_rate" , "_month_comple_rate" , "_week_comple_rate" , "_day_comple_rate")
 
     //日/周/月/季/年 - 平台订单完成率
-//    SparkSQLHBaseSink.saveToHBase(final_summary_pat_order,"final_summary_pat_order","rk","rk,city_name,_year_comple_rate,_quarter_comple_rate,_month_comple_rate,_week_comple_rate,_day_comple_rate")
+    SparkSQLHBaseSink.saveToHBase(final_summary_pat_order,"final_summary_pat_order","rk","rk,city_name,_year_comple_rate,_quarter_comple_rate,_month_comple_rate,_week_comple_rate,_day_comple_rate")
 
 
     //========================司机订单完成率（司机）========================================
@@ -97,7 +98,7 @@ object DriverTransation {
     //日/周/月/季/年 - 司机订单完成率
     val _driver_order_summary = sparkSession.sql(DriverSQL._driver_order_summary).toDF("rk" , "driver_id" , "driver_name" , "_year_comple_rate" , "_quarter_comple_rate" , "_month_comple_rate" , "_week_comple_rate" , "_day_comple_rate")
 
-//    SparkSQLHBaseSink.saveToHBase(_driver_order_summary,"_driver_order_summary","rk","rk,driver_id,driver_name,_year_comple_rate,_quarter_comple_rate,_month_comple_rate,_week_comple_rate,_day_comple_rate")
+    SparkSQLHBaseSink.saveToHBase(_driver_order_summary,"_driver_order_summary","rk","rk,driver_id,driver_name,_year_comple_rate,_quarter_comple_rate,_month_comple_rate,_week_comple_rate,_day_comple_rate")
 
 
     //==========================新增司机注册数=========================================
@@ -116,7 +117,7 @@ object DriverTransation {
     //日/周/月/季/年 - 各城市的司机注册数
     val _register_driver = sparkSession.sql(DriverSQL._register_driver).toDF("rk" , "register_city" , "_register_year_num" , "_register_quarter_num" , "_register_month_num" , "_register_week_num" , "_register_day_num")
    // DataFrameToHbase.save(_register_driver , "_register_driver" , "rk" , 1 )
-//    SparkSQLHBaseSink.saveToHBase(_register_driver,"_register_driver","rk","rk,register_city,_register_year_num,_register_quarter_num,_register_month_num,_register_week_num,_register_day_num")
+    SparkSQLHBaseSink.saveToHBase(_register_driver,"_register_driver","rk","rk,register_city,_register_year_num,_register_quarter_num,_register_month_num,_register_week_num,_register_day_num")
 
   }
 
