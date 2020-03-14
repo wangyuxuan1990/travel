@@ -11,7 +11,12 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
  */
 object SparkSQLHBaseSource {
   def main(args: Array[String]): Unit = {
-    val sparkSession: SparkSession = SparkSession.builder().master("local[1]").appName("SparkSQLHBaseSource").getOrCreate()
+    val sparkSession: SparkSession = SparkSession
+      .builder()
+      .master("local[1]")
+      .appName("SparkSQLHBaseSource")
+      .config("spark.extraListeners","com.travel.listener.SparkSessionListener")
+      .getOrCreate()
     sparkSession.sparkContext.setLogLevel("WARN")
     val order: DataFrame = sparkSession.read
       .format("com.travel.programApp.hbaseSource.HBaseSource")

@@ -3,6 +3,7 @@ package com.travel.programApp
 import java.lang
 
 import com.travel.common.{ConfigUtil, Constants}
+import com.travel.listener.SparkStreamingListener
 import com.travel.utils.{HbaseTools, JsonParse}
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -69,6 +70,7 @@ object StreamingMaxwellKafka {
       }
     })
 
+    ssc.addStreamingListener(new SparkStreamingListener(1))
     ssc.start()
     ssc.awaitTermination()
   }
